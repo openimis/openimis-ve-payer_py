@@ -1,4 +1,4 @@
-# openIMIS Backend Contribution reference module
+# openIMIS Backend Payer reference module
 This repository holds the files of the openIMIS Backend Payer reference module. It is dedicated to be deployed as a module of [openimis-be_py](https://github.com/openimis/openimis-be_py).
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
@@ -15,7 +15,7 @@ This repository holds the files of the openIMIS Backend Payer reference module. 
 None
 
 ## Services
-* ByPolicyPremiumsAmountService, aggregates (sum) the premium amounts of a Policy
+None
 
 ## Reports (template can be overloaded via report.ReportDefinition)
 None
