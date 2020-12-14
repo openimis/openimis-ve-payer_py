@@ -9,5 +9,6 @@ class PayerGQLType(DjangoObjectType):
         model = Payer
         filter_fields = {
             "id": ["exact"],
-            "uuid": ["exact"]
+            "uuid": ["exact"],
+            "name": ["exact", "icontains"],
         }
