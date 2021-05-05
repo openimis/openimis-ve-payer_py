@@ -17,11 +17,26 @@ class PayerType(models.Model):
 
 
 class Payer(core_models.VersionedModel):
+    PAYER_TYPE_COOP = 'C'
+    PAYER_TYPE_DONOR = 'D'
+    PAYER_TYPE_GOV = 'G'
+    PAYER_TYPE_LOCAL_AUTH = 'L'
+    PAYER_TYPE_OTHER = 'O'
+    PAYER_TYPE_PRIVATE_ORG = 'P'
+    PAYER_TYPE_CHOICES = (
+        (PAYER_TYPE_COOP, 'Co-operative'),
+        (PAYER_TYPE_DONOR, 'Donor'),
+        (PAYER_TYPE_GOV, 'Government'),
+        (PAYER_TYPE_LOCAL_AUTH, 'Local Authority'),
+        (PAYER_TYPE_OTHER, 'Other'),
+        (PAYER_TYPE_PRIVATE_ORG, 'Private Organization'),
+    )
+
     id = models.AutoField(db_column='PayerID', primary_key=True)
     uuid = models.CharField(db_column='PayerUUID', max_length=36, default=uuid.uuid4, unique=True)
-
-    type = models.ForeignKey(
-        PayerType, models.DO_NOTHING, db_column='PayerType', blank=True, null=True)
+    type = models.CharField(db_column='PayerType', max_length=1, choices=PAYER_TYPE_CHOICES)
+    # payer_type = models.ForeignKey(
+    #     "contribution.PayerType", models.DO_NOTHING, db_column='PayerType', blank=True, null=True)
     name = models.CharField(db_column='PayerName', max_length=100, null=False)
     address = models.CharField(db_column='PayerAddress', max_length=100, null=True, blank=True)
     location = models.ForeignKey("location.Location", db_column="LocationId", blank=True, null=True,
@@ -31,6 +46,7 @@ class Payer(core_models.VersionedModel):
     email = models.CharField(db_column='eMail', max_length=50, null=True, blank=True)
 
     audit_user_id = models.IntegerField(db_column='AuditUserID')
+
     # rowid = models.TextField(db_column='RowID', blank=True, null=True)
 
     class Meta:
