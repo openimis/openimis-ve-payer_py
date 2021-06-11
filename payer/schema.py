@@ -1,19 +1,16 @@
-from django.db.models import Q
-from django.core.exceptions import PermissionDenied
-from graphene_django.filter import DjangoFilterConnectionField
 import graphene_django_optimizer as gql_optimizer
-
-from django.utils.translation import gettext as _
-from location.apps import LocationConfig
 from core.schema import OrderedDjangoFilterConnectionField
+from django.db.models import Q
+from location.apps import LocationConfig
 
 # We do need all queries and mutations in the namespace here.
 from .gql_queries import *  # lgtm [py/polluting-import]
-from .gql_mutations import *  # lgtm [py/polluting-import]
+
 
 class Query(graphene.ObjectType):
     payers = OrderedDjangoFilterConnectionField(
         PayerGQLType,
+        str=graphene.String(),
         parent_location=graphene.String(),
         parent_location_level=graphene.Int(),
         orderBy=graphene.List(of_type=graphene.String),
@@ -26,6 +23,9 @@ class Query(graphene.ObjectType):
         # show_history = kwargs.get('show_history', False)
         # if not show_history and not kwargs.get('uuid', None):
         #     filters += filter_validity(**kwargs)
+        text_search = kwargs.get("str")
+        if text_search:
+            filters.append(Q(name__icontains=text_search))
         parent_location = kwargs.get('parent_location')
         if parent_location is not None:
             parent_location_level = kwargs.get('parent_location_level')
