@@ -72,7 +72,7 @@ class CreatePayerMutation(CreateOrUpdatePayerMutation):
     def async_mutate(cls, user, **data):
         try:
             cls.do_mutate(
-                PayerConfig.gql_mutation_payers_add_perms,
+                PayerConfig.gql_mutation_payer_add_perms,
                 user,
                 **data,
             )
@@ -121,7 +121,7 @@ class DeletePayerMutation(OpenIMISMutation):
 
     @classmethod
     def async_mutate(cls, user, **data):
-        if not user.has_perms(PayerConfig.gql_mutation_payers_delete_perms):
+        if not user.has_perms(PayerConfig.gql_mutation_payer_delete_perms):
             raise PermissionDenied(_("unauthorized"))
         errors = []
 
