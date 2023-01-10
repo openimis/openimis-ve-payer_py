@@ -7,6 +7,7 @@ from django.utils.translation import gettext as _, gettext_lazy
 from payer.apps import PayerConfig
 from core.schema import OrderedDjangoFilterConnectionField
 from .models import Payer
+from location.models import Location
 
 from .gql_queries import PayerGQLType
 
@@ -38,20 +39,24 @@ class Query(graphene.ObjectType):
     def resolve_payers(self, info, **kwargs):
         if not info.context.user.has_perms(PayerConfig.gql_query_payers_perms):
             raise PermissionDenied(_("unauthorized"))
-        filters = []
+
+        filters = Payer.objects
         show_history = kwargs.get("show_history", False)
         if not show_history:
-            filters += filter_validity(**kwargs)
+            filters = filters.filter(*filter_validity(**kwargs))
 
         search = kwargs.get("search", None)
         if search is not None:
-            filters.append(
+            filters = filters.filter(
                 Q(name__icontains=search)
                 | Q(phone__icontains=search)
                 | Q(email__icontains=search)
             )
 
-        return gql_optimizer.query(Payer.objects.filter(*filters), info)
+        filters = filters.filter(
+            Location.build_user_location_filter_query(info.context.user._u))
+
+        return gql_optimizer.query(filters, info)
 
 
 class Mutation(graphene.ObjectType):
