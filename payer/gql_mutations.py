@@ -21,6 +21,8 @@ def create_or_update_payer(user, data):
 
     if payer_uuid:
         payer = Payer.objects.get(uuid=payer_uuid)
+        if payer.validity_to:
+            raise ValidationError(_('Cannot update historical values'))
         payer.save_history()
         for (key, value) in data.items():
             setattr(payer, key, value)
