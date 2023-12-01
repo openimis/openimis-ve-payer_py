@@ -35,7 +35,7 @@ class PayerFilter(django_filters.FilterSet):
     def filter_location(self, queryset, name, value):
         return queryset.filter(Q(location__id=value) | Q(location__parent__id=value))
     def filter_type(self, queryset, name, value):
-            return queryset.filter(type__code=value)
+            return queryset.filter(type__payer_type=value)
     class Meta:
         model = Payer
         fields = {
