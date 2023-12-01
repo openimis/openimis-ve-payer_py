@@ -52,7 +52,7 @@ class PayerGQLTestCase(GraphQLTestCase):
             '''
   query usePayersQuery (
     $first: Int, $last: Int, $before: String, $after: String, $phone: String, $name: String,
-    $email: String, $location: Int, $showHistory: Boolean, $search: String, $type: PayerType,
+    $email: String, $location: Int, $showHistory: Boolean, $search: String, $type: String,
     ) {
     payers (
       first: $first, last: $last, before: $before, after: $after, phone_Icontains: $phone, showHistory: $showHistory, type: $type
