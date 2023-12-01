@@ -28,14 +28,14 @@ class PayerFilter(django_filters.FilterSet):
     )
     type = CharFilter(
         lookup_expr=["exact"],
-        method="type_location",
+        method="filter_type",
         label=gettext_lazy("Filter payers with or below a given payer type code"),
     )
 
     def filter_location(self, queryset, name, value):
         return queryset.filter(Q(location__id=value) | Q(location__parent__id=value))
     def filter_type(self, queryset, name, value):
-            return queryset.filter(type__payer_type=value)
+            return queryset.filter(type=value)
     class Meta:
         model = Payer
         fields = {

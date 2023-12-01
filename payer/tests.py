@@ -89,6 +89,7 @@ class PayerGQLTestCase(GraphQLTestCase):
   } 
             ''',
             headers={"HTTP_AUTHORIZATION": f"Bearer {self.admin_token}"},
+            variables={ 'first':10, 'type':'C'},
         )
 
         self.assertEquals(response.status_code, status.HTTP_200_OK)
