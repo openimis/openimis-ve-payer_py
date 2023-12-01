@@ -4,7 +4,6 @@ from django.conf import settings
 from core import models as core_models
 from django.db import models
 
-
 class PayerType(models.Model):
     code = models.CharField(db_column="Code", primary_key=True, max_length=1)
     payer_type = models.CharField(db_column="PayerType", max_length=50)
@@ -63,16 +62,11 @@ class Payer(core_models.VersionedModel):
 
     @classmethod
     def get_queryset(cls, queryset, user):
-        from location.models import UserDistrict
+        from location.models import LocationManager
 
         queryset = cls.filter_queryset(queryset)
-        if settings.ROW_SECURITY:
-            districts = UserDistrict.get_user_districts(user._u).values_list(
-                "location_id", "location__parent_id"
-            )
-            flat_locations = itertools.chain(*districts)
-            queryset = Payer.objects.filter(location__id__in=flat_locations)
-
+        if settings.ROW_SECURITY and not user._u.is_imis_admin:
+            queryset = LocationManager().build_user_location_filter_query(user._u, queryset = Payer.objects, loc_types=['R', 'D'])
         return queryset
 
     class Meta:
