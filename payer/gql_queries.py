@@ -16,6 +16,8 @@ from django.core.exceptions import PermissionDenied
 
 class IntegerFilter(django_filters.NumberFilter):
     field_class = forms.IntegerField
+class CharFilter(django_filters.CharFilter):
+    field_class = forms.CharField
 
 
 class PayerFilter(django_filters.FilterSet):
@@ -24,10 +26,16 @@ class PayerFilter(django_filters.FilterSet):
         method="filter_location",
         label=gettext_lazy("Filter payers with or below a given location ID"),
     )
+    type = CharFilter(
+        lookup_expr=["exact"],
+        method="type_location",
+        label=gettext_lazy("Filter payers with or below a given payer type code"),
+    )
 
     def filter_location(self, queryset, name, value):
         return queryset.filter(Q(location__id=value) | Q(location__parent__id=value))
-
+    def filter_type(self, queryset, name, value):
+            return queryset.filter(type__code=value)
     class Meta:
         model = Payer
         fields = {
@@ -36,7 +44,6 @@ class PayerFilter(django_filters.FilterSet):
             "name": ["exact", "icontains"],
             "email": ["exact", "icontains"],
             "phone": ["exact", "icontains"],
-            "type": ["exact"],
         }
 
 

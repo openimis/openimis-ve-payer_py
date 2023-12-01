@@ -7,7 +7,7 @@ from django.utils.translation import gettext as _, gettext_lazy
 from payer.apps import PayerConfig
 from core.schema import OrderedDjangoFilterConnectionField
 from .models import Payer
-from location.models import Location
+from location.models import Location, LocationManager
 
 from .gql_queries import PayerGQLType
 
@@ -53,8 +53,7 @@ class Query(graphene.ObjectType):
                 | Q(email__icontains=search)
             )
 
-        filters = filters.filter(
-            Location.build_user_location_filter_query(info.context.user._u))
+        filters = LocationManager().build_user_location_filter_query(info.context.user._u, queryset = filters)
 
         return gql_optimizer.query(filters, info)
 
