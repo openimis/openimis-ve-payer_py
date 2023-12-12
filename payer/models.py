@@ -78,7 +78,7 @@ class Payer(core_models.VersionedModel):
 class Funding(core_models.HistoryModel):
     class FundingStatus(models.TextChoices):
         PENDING = "N", _("PENDING")
-        PAYED = "P", _("PAID")
+        PAID = "P", _("PAID")
         AWAITING_FOR_RECONCILIATION = "A", _("AWAITING_FOR_RECONCILIATION")
         RECONCILIATED = "R", _("RECONCILIATED")
 

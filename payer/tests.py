@@ -128,7 +128,30 @@ class PayerGQLTestCase(GraphQLTestCase):
         content = json.loads(response.content)
 
         self.assertResponseNoErrors(response)
+        #wait 
         
+        response = self.query('''
+        
+        {
+        mutationLogs(clientMutationId: "6e3747b2-135b-4258-ab2b-d00bb2c4f640")
+        {
+            
+        pageInfo { hasNextPage, hasPreviousPage, startCursor, endCursor}
+        edges
+        {
+        node
+        {
+            id,status,error,clientMutationId,clientMutationLabel,clientMutationDetails,requestDateTime,jsonExt
+        }
+        }
+        }
+        }
+        
+        ''',
+            headers={"HTTP_AUTHORIZATION": f"Bearer {self.admin_token}"})
+        
+        self.assertEquals(response.status_code, status.HTTP_200_OK)
+        content = json.loads(response.content)
         
     def test_query_funding(self):
         response = self.query(
