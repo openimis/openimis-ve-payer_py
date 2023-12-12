@@ -8,8 +8,9 @@ from payer.apps import PayerConfig
 from core.schema import OrderedDjangoFilterConnectionField
 from .models import Payer
 from location.models import Location, LocationManager
+from product.schema import ProductGQLType
 
-from .gql_queries import PayerGQLType
+from .gql_queries import PayerGQLType, FundingGQLType
 
 from .gql_mutations import (
     CreatePayerMutation,
@@ -20,6 +21,18 @@ from .gql_mutations import (
 
 
 class Query(graphene.ObjectType):
+    fundings = OrderedDjangoFilterConnectionField(
+        FundingGQLType,
+        payer_id=graphene.ID(),
+        client_mutation_id=graphene.String(),
+        show_history=graphene.Boolean(),
+        parent_location_level=graphene.Int(),
+        orderBy=graphene.List(of_type=graphene.String),
+    )
+    
+    funding = graphene.Field(FundingGQLType, uuid=graphene.UUID())
+
+        
     payers = OrderedDjangoFilterConnectionField(
         PayerGQLType,
         show_history=graphene.Boolean(),
