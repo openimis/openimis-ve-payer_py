@@ -7,7 +7,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ValidationError, PermissionDenied
 from .apps import PayerConfig
 from location.models import Location
-from .models import Payer, PayerMutation
+from .models import Payer, PayerMutation, Funding
 
 
 logger = logging.getLogger(__name__)
@@ -182,8 +182,6 @@ class AddFundingMutation(OpenIMISMutation):
             raise PermissionDenied(_("unauthorized"))
 
         from product.models import Product
-        from contribution.services import add_fund
-        from contribution.models import PremiumMutation
 
         payer = Payer.objects.filter(
             validity_to__isnull=True, id=data.get("payer_id")
@@ -193,20 +191,16 @@ class AddFundingMutation(OpenIMISMutation):
         ).get()
 
         try:
-            premium = add_fund(
-                payer,
-                product,
-                data.get("pay_date"),
-                data.get("amount"),
-                data.get("receipt"),
-                audit_user_id=user.id_for_audit,
-                is_offline=False,
+            funding = Funding(**{
+                'payer':payer,
+                'product': product,
+                'pay_date':data.get("pay_date"),
+                'amount':data.get("amount"),
+                'receipt':data.get("receipt"),
+            }
             )
+            funding.save(username = user.username)
 
-            if client_mutation_id is not None:
-                PremiumMutation.object_mutated(
-                    user, client_mutation_id=client_mutation_id, premium=premium
-                )
         except Exception as exc:
             logger.exception(exc)
             return [
