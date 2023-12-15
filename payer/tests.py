@@ -12,7 +12,8 @@ from location.test_helpers import create_test_location, assign_user_districts
 from rest_framework import status
 from insuree.test_helpers import create_test_insuree
 from location.test_helpers import create_test_location, create_test_health_facility, create_test_village
-
+from payer.models import Payer
+from product.models import Product
 
 
 # from openIMIS import schema
@@ -47,46 +48,46 @@ class PayerGQLTestCase(GraphQLTestCase):
         assign_user_districts(cls.admin_dist_user, ["R1D1", "R2D1", "R2D2", "R2D1", cls.test_village.parent.parent.code])
         cls.admin_dist_token = get_token(cls.admin_dist_user, DummyContext(user=cls.admin_dist_user))
 
-    def test_query_insuree_number_validity(self):
+    def test_query_payer(self):
         response = self.query(
             '''
-  query usePayersQuery (
-    $first: Int, $last: Int, $before: String, $after: String, $phone: String, $name: String,
-    $email: String, $location: Int, $showHistory: Boolean, $search: String, $type: String,
-    ) {
-    payers (
-      first: $first, last: $last, before: $before, after: $after, phone_Icontains: $phone, showHistory: $showHistory, type: $type
-      name_Icontains: $name, location: $location, email_Icontains: $email, search: $search
-      ) {
-      edges {
-        node {
+        query usePayersQuery (
+          $first: Int, $last: Int, $before: String, $after: String, $phone: String, $name: String,
+          $email: String, $location: Int, $showHistory: Boolean, $search: String, $type: String,
+          ) {
+          payers (
+            first: $first, last: $last, before: $before, after: $after, phone_Icontains: $phone, showHistory: $showHistory, type: $type
+            name_Icontains: $name, location: $location, email_Icontains: $email, search: $search
+            ) {
+            edges {
+              node {
+                id
+                uuid
+                ...PayerFragment
+              }
+            }
+            pageInfo {
+              hasNextPage
+              hasPreviousPage
+              startCursor
+              endCursor
+            }
+            totalCount
+          }
+        }
+
+        fragment PayerFragment on PayerGQLType {
           id
           uuid
-          ...PayerFragment
-        }
-      }
-      pageInfo {
-        hasNextPage
-        hasPreviousPage
-        startCursor
-        endCursor
-      }
-      totalCount
-    }
-  }
-
-  fragment PayerFragment on PayerGQLType {
-    id
-    uuid
-    name
-    email
-    phone
-    type
-    address
-    location {id name uuid code parent {id name uuid code}}
-    validityFrom
-    validityTo
-  } 
+          name
+          email
+          phone
+          type
+          address
+          location {id name uuid code parent {id name uuid code}}
+          validityFrom
+          validityTo
+        } 
             ''',
             headers={"HTTP_AUTHORIZATION": f"Bearer {self.admin_token}"},
             variables={ 'first':10, 'type':'C'},
@@ -97,6 +98,102 @@ class PayerGQLTestCase(GraphQLTestCase):
 
         self.assertResponseNoErrors(response)
         
+        
+    def test_add_funding(self):
+      
+        response = self.query(
+      '''
+    mutation useAddFundingMutation($input: AddFundingMutationInput!) {
+      addFunding(input: $input) {
+        internalId
+        clientMutationId
+      }
+    }
+  
+      ''',
+            headers={"HTTP_AUTHORIZATION": f"Bearer {self.admin_token}"},
+            variables={
+              "input": {
+                "amount": 34576,
+                "clientMutationId": "6e3747b2-135b-4258-ab2b-d00bb2c4f640",
+                "payDate": "2023-12-12",
+                "payerId": Payer.objects.first().id,
+                "productId": Product.objects.first().id,
+                "receipt": "324534"
+              }
+            },
+        )
+
+        self.assertEquals(response.status_code, status.HTTP_200_OK)
+        content = json.loads(response.content)
+
+        self.assertResponseNoErrors(response)
+        #wait 
+        
+        response = self.query('''
+        
+        {
+        mutationLogs(clientMutationId: "6e3747b2-135b-4258-ab2b-d00bb2c4f640")
+        {
+            
+        pageInfo { hasNextPage, hasPreviousPage, startCursor, endCursor}
+        edges
+        {
+        node
+        {
+            id,status,error,clientMutationId,clientMutationLabel,clientMutationDetails,requestDateTime,jsonExt
+        }
+        }
+        }
+        }
+        
+        ''',
+            headers={"HTTP_AUTHORIZATION": f"Bearer {self.admin_token}"})
+        
+        self.assertEquals(response.status_code, status.HTTP_200_OK)
+        content = json.loads(response.content)
+        
+    def test_query_funding(self):
+        response = self.query(
+        '''
+        query usePayerFundingsQuery (
+          $first: Int, $last: Int, $before: String, $after: String, $payerId: UUID!
+          ) {
+          payer (uuid: $payerId) {
+            fundings (first: $first, last: $last, before: $before, after: $after) {
+              edges {
+                node {
+                  uuid
+                  amount
+                  payDate
+                  product {
+                    name
+                  }
+                  receipt
+                }
+              }
+              pageInfo {
+                hasNextPage
+                hasPreviousPage
+                startCursor
+                endCursor
+              }
+              totalCount
+            }
+          }
+        }
+        ''',
+            headers={"HTTP_AUTHORIZATION": f"Bearer {self.admin_token}"},
+            variables={ 'first':10, 'payerId':Payer.objects.first().uuid},
+        )
+
+        self.assertEquals(response.status_code, status.HTTP_200_OK)
+        content = json.loads(response.content)
+
+        self.assertResponseNoErrors(response)
+
+        
+
 
 
 

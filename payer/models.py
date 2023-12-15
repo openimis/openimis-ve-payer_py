@@ -3,6 +3,8 @@ import itertools
 from django.conf import settings
 from core import models as core_models
 from django.db import models
+from django.utils.translation import gettext as _
+from product.models import Product
 
 class PayerType(models.Model):
     code = models.CharField(db_column="Code", primary_key=True, max_length=1)
@@ -73,7 +75,38 @@ class Payer(core_models.VersionedModel):
         managed = True
         db_table = "tblPayer"
 
+class Funding(core_models.HistoryModel):
+    class FundingStatus(models.TextChoices):
+        PENDING = "N", _("PENDING")
+        PAID = "P", _("PAID")
+        AWAITING_FOR_RECONCILIATION = "A", _("AWAITING_FOR_RECONCILIATION")
+        RECONCILIATED = "R", _("RECONCILIATED")
 
+    product = models.ForeignKey(Product,
+                                models.DO_NOTHING, db_column='ProdID',
+                                blank=True, null=True,
+                                related_name="fundings")
+    amount = models.DecimalField(
+        db_column='Amount', max_digits=18, decimal_places=2, blank=True, null=True)
+    pay_date = models.DateField(
+        db_column='PaidDate', blank=True, null=True)
+    status = models.CharField(
+        db_column='Status', max_length=1, choices=FundingStatus.choices, default=FundingStatus.PENDING, null=False
+    )
+    payer = models.ForeignKey(
+        Payer,
+        models.DO_NOTHING,
+        db_column="PayerID",
+        blank=True,
+        null=True,
+        related_name="fundings",
+    )
+    receipt = models.CharField(db_column="Receipt", max_length=50)
+    
+    class Meta:
+        managed = True
+        db_table = "tblFunding"
+        
 class PayerMutation(core_models.UUIDModel, core_models.ObjectMutation):
     payer = models.ForeignKey(Payer, models.DO_NOTHING, related_name="+")
     mutation = models.ForeignKey(
