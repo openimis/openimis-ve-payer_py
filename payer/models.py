@@ -3,7 +3,8 @@ import itertools
 from django.conf import settings
 from core import models as core_models
 from django.db import models
-
+from django.utils.translation import gettext as _
+from product.models import Product
 
 class PayerType(models.Model):
     code = models.CharField(db_column="Code", primary_key=True, max_length=1)
@@ -63,23 +64,49 @@ class Payer(core_models.VersionedModel):
 
     @classmethod
     def get_queryset(cls, queryset, user):
-        from location.models import UserDistrict
+        from location.models import LocationManager
 
         queryset = cls.filter_queryset(queryset)
-        if settings.ROW_SECURITY:
-            districts = UserDistrict.get_user_districts(user._u).values_list(
-                "location_id", "location__parent_id"
-            )
-            flat_locations = itertools.chain(*districts)
-            queryset = Payer.objects.filter(location__id__in=flat_locations)
-
+        if settings.ROW_SECURITY and not user._u.is_imis_admin:
+            queryset = LocationManager().build_user_location_filter_query(user._u, queryset = Payer.objects, loc_types=['R', 'D'])
         return queryset
 
     class Meta:
         managed = True
         db_table = "tblPayer"
 
+class Funding(core_models.HistoryModel):
+    class FundingStatus(models.TextChoices):
+        PENDING = "N", _("PENDING")
+        PAID = "P", _("PAID")
+        AWAITING_FOR_RECONCILIATION = "A", _("AWAITING_FOR_RECONCILIATION")
+        RECONCILIATED = "R", _("RECONCILIATED")
 
+    product = models.ForeignKey(Product,
+                                models.DO_NOTHING, db_column='ProdID',
+                                blank=True, null=True,
+                                related_name="fundings")
+    amount = models.DecimalField(
+        db_column='Amount', max_digits=18, decimal_places=2, blank=True, null=True)
+    pay_date = models.DateField(
+        db_column='PaidDate', blank=True, null=True)
+    status = models.CharField(
+        db_column='Status', max_length=1, choices=FundingStatus.choices, default=FundingStatus.PENDING, null=False
+    )
+    payer = models.ForeignKey(
+        Payer,
+        models.DO_NOTHING,
+        db_column="PayerID",
+        blank=True,
+        null=True,
+        related_name="fundings",
+    )
+    receipt = models.CharField(db_column="Receipt", max_length=50)
+    
+    class Meta:
+        managed = True
+        db_table = "tblFunding"
+        
 class PayerMutation(core_models.UUIDModel, core_models.ObjectMutation):
     payer = models.ForeignKey(Payer, models.DO_NOTHING, related_name="+")
     mutation = models.ForeignKey(
